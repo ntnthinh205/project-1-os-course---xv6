@@ -201,6 +201,8 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	$U/_tree\
+	$U/_diff\
+
 	$U/_primes\
 	$U/_du\
 	$U/_pingpong\
