@@ -205,6 +205,7 @@ UPROGS=\
 	$U/_du\
 	$U/_pingpong\
 	$U/_cp\
+	$U/_sleep\
 
 
 

@@ -34,7 +34,7 @@ long du(char *path, int showFiles, int summary, int isRoot) {
         if (p > buf && p[-1] != '/') {
             *p++ = '/';
         }
-        *p = 0; // Ensure buf is a valid string after adding slash
+        *p = 0; // Dam bao buf la chuoi hop le sau khi them dau gach cheo
 
         while (read(fd, &de, sizeof(de)) == sizeof(de)) {
             if (de.inum == 0)
