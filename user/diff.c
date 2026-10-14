@@ -6,7 +6,7 @@
 #define BUF_SIZE 512
 #define MAX_LINE 512
 
-static struct line_reader {
+struct line_reader {
   int fd;
   char buf[BUF_SIZE];
   int idx;
@@ -63,7 +63,7 @@ static int readline(struct line_reader *r, char *buf, int max)
   return 1;
 }
 
-static int main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   char *file1 = 0;
   char *file2 = 0;
