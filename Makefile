@@ -63,6 +63,9 @@ endif
 # perhaps in /opt/riscv/bin
 #TOOLPREFIX = 
 
+#for macOS
+#TOOLPREFIX = riscv64-elf-
+
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
 TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
@@ -85,7 +88,10 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
+#for Windows
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
+#for MacOS
+#CFLAGS = -Wall -O -fno-omit-frame-pointer -ggdb -gdwarf-2 -Wno-error=incompatible-pointer-types
 
 ifdef LAB
 LABUPPER = $(shell echo $(LAB) | tr a-z A-Z)
@@ -197,7 +203,8 @@ UPROGS=\
 	$U/_tree\
 	$U/_primes\
 	$U/_du\
-
+	$U/_pingpong\
+	$U/_cp\
 
 
 
