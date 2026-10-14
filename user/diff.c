@@ -3,28 +3,10 @@
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
-/*
- * diff – so sánh 2 file theo từng dòng cho xv6
- * Cú pháp: diff file1 file2 [-q] hoặc diff -q file1 file2
- *   -q: chế độ quiet, chỉ in "diff: files differ" nếu 2 file khác nhau.
- *
- * Định dạng mặc định khi có dòng khác nhau:
- *   Nếu khác nhau tại dòng i (cả 2 file đều có dòng i):
- *     file1:i: < <line_file1>
- *     file2:i: > <line_file2>
- *   Nếu file2 có thêm dòng (file1 đã hết - EOF):
- *     file1:i: < EOF
- *     file2:i: > <line_file2>
- *   Nếu file1 có thêm dòng (file2 đã hết - EOF):
- *     file1:i: < <line_file1>
- *     file2:i: > EOF
- *   Nếu 2 file giống hệt nhau: không in gì.
- */
-
 #define BUF_SIZE 512
 #define MAX_LINE 512
 
-struct line_reader {
+static struct line_reader {
   int fd;
   char buf[BUF_SIZE];
   int idx;
@@ -37,12 +19,7 @@ static struct line_reader r2;
 static char line1[MAX_LINE];
 static char line2[MAX_LINE];
 
-/*
- * Đọc 1 ký tự từ buffer của reader, nạp thêm nếu buffer rỗng.
- * Trả về ký tự (0-255) hoặc -1 khi gặp EOF/lỗi.
- */
-static int
-get_char(struct line_reader *r)
+static int get_char(struct line_reader *r)
 {
   if (r->eof)
     return -1;
@@ -59,15 +36,7 @@ get_char(struct line_reader *r)
   return (uchar)r->buf[r->idx++];
 }
 
-/*
- * Đọc 1 dòng từ reader cho đến '\n' hoặc EOF.
- * Bỏ qua '\r', loại bỏ '\n' và kết thúc chuỗi bằng '\0'.
- * Trả về:
- *   1: đọc được một dòng hợp lệ (kể cả dòng trống).
- *   0: đã hết file (EOF) và không có ký tự nào được đọc.
- */
-static int
-readline(struct line_reader *r, char *buf, int max)
+static int readline(struct line_reader *r, char *buf, int max)
 {
   int i = 0;
   int c;
@@ -76,8 +45,8 @@ readline(struct line_reader *r, char *buf, int max)
     c = get_char(r);
     if (c < 0) {
       if (i == 0)
-        return 0; /* EOF và không có ký tự nào */
-      break;      /* EOF ở cuối dòng cuối cùng (không có '\n') */
+        return 0;
+      break;
     }
 
     if (c == '\n')
@@ -94,8 +63,7 @@ readline(struct line_reader *r, char *buf, int max)
   return 1;
 }
 
-int
-main(int argc, char *argv[])
+static int main(int argc, char *argv[])
 {
   char *file1 = 0;
   char *file2 = 0;
@@ -105,7 +73,7 @@ main(int argc, char *argv[])
   int i;
   int line_num = 0;
 
-  /* Phân tích tham số dòng lệnh */
+  // parse argument 
   for (i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-q") == 0) {
       quiet = 1;
@@ -128,7 +96,7 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  /* Mở file 1 */
+  // Open file 1
   if ((fd1 = open(file1, O_RDONLY)) < 0) {
     fprintf(2, "diff: cannot open %s\n", file1);
     exit(1);
@@ -139,7 +107,7 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  /* Mở file 2 */
+  // Open file 2
   if ((fd2 = open(file2, O_RDONLY)) < 0) {
     fprintf(2, "diff: cannot open %s\n", file2);
     close(fd1);
@@ -152,18 +120,18 @@ main(int argc, char *argv[])
     exit(1);
   }
 
-  /* Khởi tạo reader */
+  // Init readers
   memset(&r1, 0, sizeof(r1));
   memset(&r2, 0, sizeof(r2));
   r1.fd = fd1;
   r2.fd = fd2;
 
-  /* So sánh từng dòng */
+  // Compare files line by line
   while (1) {
     int has1 = readline(&r1, line1, sizeof(line1));
     int has2 = readline(&r2, line2, sizeof(line2));
 
-    /* Cả 2 file đều đã tới EOF */
+    // Both files have reached EOF
     if (!has1 && !has2)
       break;
 
@@ -174,7 +142,6 @@ main(int argc, char *argv[])
       if (strcmp(line1, line2) != 0)
         differ = 1;
     } else {
-      /* Một file đã hết dòng trước file kia */
       differ = 1;
     }
 
