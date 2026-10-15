@@ -6,7 +6,8 @@
  * In các số nguyên tố từ 2 đến 280.
  */
 
-void sieve(int rd);
+// Mỗi tiến trình sàng kết thúc bằng exit, không trả về hàm gọi.
+void sieve(int rd) __attribute__((noreturn));
 
 int main(int argc, char *argv[]) {
     int p[2];
