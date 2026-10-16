@@ -154,6 +154,9 @@ int main(int argc, char *argv[])
         fprintf(2, "tree: invalid depth '%s'\n", argv[i]);
         exit(1);
       }
+    } else if (argv[i][0] == '-') {
+      fprintf(2, "tree: unknown option %s\n", argv[i]);
+      exit(1);
     } else {
       path = argv[i];
     }
