@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
   char *path = ".";
   int maxDepth = MAX_DEPTH;
   int onlyDir = 0;
+  int hasPath = 0;
   int i;
 
   // parse arguments
@@ -158,7 +159,12 @@ int main(int argc, char *argv[])
       fprintf(2, "tree: unknown option %s\n", argv[i]);
       exit(1);
     } else {
+      if (hasPath) {
+        fprintf(2, "Usage: tree [path] [-L depth] [-d]\n");
+        exit(1);
+      }
       path = argv[i];
+      hasPath = 1;
     }
   }
 
