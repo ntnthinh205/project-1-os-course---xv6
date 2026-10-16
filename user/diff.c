@@ -29,7 +29,9 @@ static int get_char(struct line_reader *r)
   if (r->idx >= r->size) {
     r->size = read(r->fd, r->buf, sizeof(r->buf));
     r->idx = 0;
-    if (r->size <= 0) {
+    if (r->size < 0)
+      return -2;
+    if (r->size == 0) {
       r->eof = 1;
       return -1;
     }
@@ -45,6 +47,8 @@ static int readline(struct line_reader *r, char **buf, uint *capacity)
 
   while (1) {
     c = get_char(r);
+    if (c == -2)
+      return -2;
     if (c < 0) {
       if (i == 0)
         return 0;
@@ -154,7 +158,12 @@ int main(int argc, char *argv[])
     int has2 = readline(&r2, &line2, &capacity2);
 
     if (has1 < 0 || has2 < 0) {
-      fprintf(2, "diff: out of memory\n");
+      if (has1 == -2)
+        fprintf(2, "diff: cannot read %s\n", file1);
+      else if (has2 == -2)
+        fprintf(2, "diff: cannot read %s\n", file2);
+      else
+        fprintf(2, "diff: out of memory\n");
       status = 1;
       break;
     }
