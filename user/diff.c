@@ -16,8 +16,10 @@ struct line_reader {
 
 static struct line_reader r1;
 static struct line_reader r2;
-static char line1[MAX_LINE];
-static char line2[MAX_LINE];
+static char *line1;
+static char *line2;
+static uint capacity1;
+static uint capacity2;
 
 static int get_char(struct line_reader *r)
 {
@@ -27,7 +29,9 @@ static int get_char(struct line_reader *r)
   if (r->idx >= r->size) {
     r->size = read(r->fd, r->buf, sizeof(r->buf));
     r->idx = 0;
-    if (r->size <= 0) {
+    if (r->size < 0)
+      return -2;
+    if (r->size == 0) {
       r->eof = 1;
       return -1;
     }
@@ -36,13 +40,15 @@ static int get_char(struct line_reader *r)
   return (uchar)r->buf[r->idx++];
 }
 
-static int readline(struct line_reader *r, char *buf, int max)
+static int readline(struct line_reader *r, char **buf, uint *capacity)
 {
-  int i = 0;
+  uint i = 0;
   int c;
 
   while (1) {
     c = get_char(r);
+    if (c == -2)
+      return -2;
     if (c < 0) {
       if (i == 0)
         return 0;
@@ -55,11 +61,30 @@ static int readline(struct line_reader *r, char *buf, int max)
     if (c == '\r')
       continue;
 
-    if (i < max - 1)
-      buf[i++] = (char)c;
+    if (i + 1 >= *capacity) {
+      if (*capacity > 0x7fffffffU / 2)
+        return -1;
+      uint next = *capacity ? *capacity * 2 : MAX_LINE;
+      char *grown = malloc(next);
+      if (grown == 0)
+        return -1;
+      if (*buf) {
+        memmove(grown, *buf, i);
+        free(*buf);
+      }
+      *buf = grown;
+      *capacity = next;
+    }
+    (*buf)[i++] = (char)c;
   }
 
-  buf[i] = '\0';
+  if (*buf == 0) {
+    *buf = malloc(MAX_LINE);
+    if (*buf == 0)
+      return -1;
+    *capacity = MAX_LINE;
+  }
+  (*buf)[i] = '\0';
   return 1;
 }
 
@@ -72,6 +97,7 @@ int main(int argc, char *argv[])
   struct stat st;
   int i;
   int line_num = 0;
+  int status = 0;
 
   // parse argument 
   for (i = 1; i < argc; i++) {
@@ -128,8 +154,19 @@ int main(int argc, char *argv[])
 
   // Compare files line by line
   while (1) {
-    int has1 = readline(&r1, line1, sizeof(line1));
-    int has2 = readline(&r2, line2, sizeof(line2));
+    int has1 = readline(&r1, &line1, &capacity1);
+    int has2 = readline(&r2, &line2, &capacity2);
+
+    if (has1 < 0 || has2 < 0) {
+      if (has1 == -2)
+        fprintf(2, "diff: cannot read %s\n", file1);
+      else if (has2 == -2)
+        fprintf(2, "diff: cannot read %s\n", file2);
+      else
+        fprintf(2, "diff: out of memory\n");
+      status = 1;
+      break;
+    }
 
     // Both files have reached EOF
     if (!has1 && !has2)
@@ -158,5 +195,9 @@ int main(int argc, char *argv[])
 
   close(fd1);
   close(fd2);
-  exit(0);
+  if (line1)
+    free(line1);
+  if (line2)
+    free(line2);
+  exit(status);
 }
