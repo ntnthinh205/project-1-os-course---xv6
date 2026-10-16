@@ -36,7 +36,7 @@ static int count_entries(int fd, char *buf, char *p, int onlyDir)
 }
 
 // recursive function to display tree
-void tree_r(char *path, int level, int maxDepth, int onlyDir)
+int tree_r(char *path, int level, int maxDepth, int onlyDir)
 {
   int fd;
   struct dirent de;
@@ -44,31 +44,32 @@ void tree_r(char *path, int level, int maxDepth, int onlyDir)
   char buf[MAXPATH];
   char *p;
   int count, idx = 0;
+  int status = 0;
   int isLast, i;
 
   if (level > maxDepth)
-    return;
+    return 0;
 
   // open directory
   if ((fd = open(path, O_RDONLY)) < 0) {
     fprintf(2, "tree: cannot open %s\n", path);
-    return;
+    return 1;
   }
   if (fstat(fd, &st) < 0) {
     fprintf(2, "tree: cannot stat %s\n", path);
     close(fd);
-    return;
+    return 1;
   }
   if (st.type != T_DIR) {
     close(fd);
-    return;
+    return 0;
   }
 
   // check path length
   if (strlen(path) + 1 + DIRSIZ + 1 > MAXPATH) {
     fprintf(2, "tree: path too long\n");
     close(fd);
-    return;
+    return 1;
   }
 
   // prepare path buffer
@@ -83,7 +84,7 @@ void tree_r(char *path, int level, int maxDepth, int onlyDir)
   // reopen directory to print
   if ((fd = open(path, O_RDONLY)) < 0) {
     fprintf(2, "tree: cannot reopen %s\n", path);
-    return;
+    return 1;
   }
 
   p = buf + strlen(path);
@@ -125,11 +126,13 @@ void tree_r(char *path, int level, int maxDepth, int onlyDir)
       } else {
         strcpy(prefix[level - 1], "|   ");
       }
-      tree_r(buf, level + 1, maxDepth, onlyDir);
+      if (tree_r(buf, level + 1, maxDepth, onlyDir) != 0)
+        status = 1;
     }
   }
 
   close(fd);
+  return status;
 }
 
 int main(int argc, char *argv[])
@@ -183,7 +186,5 @@ int main(int argc, char *argv[])
   }
 
   // start traversal
-  tree_r(path, 1, maxDepth, onlyDir);
-
-  exit(0);
+  exit(tree_r(path, 1, maxDepth, onlyDir));
 }
