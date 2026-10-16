@@ -150,6 +150,12 @@ int main(int argc, char *argv[])
         exit(1);
       }
       i++;
+      for (int j = 0; argv[i][j]; j++) {
+        if (argv[i][j] < '0' || argv[i][j] > '9') {
+          fprintf(2, "tree: invalid depth '%s'\n", argv[i]);
+          exit(1);
+        }
+      }
       maxDepth = atoi(argv[i]);
       if (maxDepth <= 0) {
         fprintf(2, "tree: invalid depth '%s'\n", argv[i]);
